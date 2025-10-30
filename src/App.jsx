@@ -2,6 +2,40 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from './supabaseClient'
 import { formatTime, selectPlayersForRound, buildMatchesFrom16 } from './logic'
 
+import { supabase, SUPABASE_URL, SUPABASE_ANON_KEY } from './supabaseClient'
+
+// 🔎 DIAGNOSTICS — TEMPORARY
+console.log('ENV CHECK => SUPABASE_URL:', SUPABASE_URL)
+console.log('ENV CHECK => ANON KEY length:', (SUPABASE_ANON_KEY||'').length)
+
+async function diag() {
+  try {
+    // 1) Prove general network from your Netlify site works
+    const ping = await fetch('https://jsonplaceholder.typicode.com/todos/1')
+    console.log('Network test status (should be 200):', ping.status)
+
+    // 2) Direct REST probe to your Supabase REST endpoint
+    const restUrl = `${SUPABASE_URL}/rest/v1/players?select=*`
+    console.log('REST URL:', restUrl)
+
+    const r = await fetch(restUrl, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+    })
+    console.log('REST status:', r.status)
+    const bodyText = await r.text()
+    console.log('REST body (truncated):', bodyText.slice(0, 200))
+
+  } catch (e) {
+    console.error('DIAG exception:', e)
+  }
+}
+
+diag()
+
+
 console.log('ENV CHECK => URL:', supabase?.rest?.url)
 
 // simple audio beeps via WebAudio (works after first user click)
@@ -45,10 +79,9 @@ export default function App() {
           .select('*')
           .order('name')
   
-        console.log('🔎 Supabase response:', { data, error })
+        console.log('🔎 Supabase client select => data:', data, 'error:', error)
   
         if (error) {
-          // Show the full error so we know exactly what's wrong
           alert('Supabase error: ' + (error.message || JSON.stringify(error)))
           console.error('❌ Supabase select error:', error)
         }
